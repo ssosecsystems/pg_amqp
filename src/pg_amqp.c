@@ -137,7 +137,7 @@ void _PG_init() {
 }
 
 static struct brokerstate *
-local_amqp_get_a_bs(broker_id) {
+local_amqp_get_a_bs(int broker_id) {
   struct brokerstate *bs;
   for(bs = HEAD_BS; bs; bs = bs->next) {
     if(bs->broker_id == broker_id) return bs;
@@ -149,7 +149,7 @@ local_amqp_get_a_bs(broker_id) {
   return bs;
 }
 static struct brokerstate *
-local_amqp_get_bs(broker_id) {
+local_amqp_get_bs(int broker_id) {
   char sql[1024];
   char host_copy[300] = "";
   int tries = 0;
@@ -236,7 +236,7 @@ local_amqp_get_bs(broker_id) {
   return bs;
 }
 static void
-local_amqp_disconnect(broker_id) {
+local_amqp_disconnect(int broker_id) {
   struct brokerstate *bs = local_amqp_get_a_bs(broker_id);
   local_amqp_disconnect_bs(bs);
 }
@@ -279,7 +279,7 @@ pg_amqp_publish_opt(PG_FUNCTION_ARGS, int channel) {
   if(!PG_ARGISNULL(0)) {
     int broker_id;
     amqp_basic_properties_t properties;
-    
+
     int once_more = 1;
     broker_id = PG_GETARG_INT32(0);
   redo:
@@ -291,16 +291,16 @@ pg_amqp_publish_opt(PG_FUNCTION_ARGS, int channel) {
       amqp_boolean_t immediate = 0;
       amqp_bytes_t exchange_b = amqp_cstring_bytes("amq.direct");
       amqp_bytes_t routing_key_b = amqp_cstring_bytes("");
-      amqp_bytes_t body_b = amqp_cstring_bytes(""); 
+      amqp_bytes_t body_b = amqp_cstring_bytes("");
       properties._flags = 0;
-      
+
       /* Sets delivery_mode */
       if (!PG_ARGISNULL(4)) {
 	  if (PG_GETARG_INT32(4) == 1 || PG_GETARG_INT32(4) == 2) {
 	      properties._flags |= AMQP_BASIC_DELIVERY_MODE_FLAG;
               properties.delivery_mode = PG_GETARG_INT32(4);
 	  } else {
-              elog(WARNING, "Ignored delivery_mode %d, value should be 1 or 2", 
+              elog(WARNING, "Ignored delivery_mode %d, value should be 1 or 2",
                   PG_GETARG_INT32(4));
 	  }
       }
@@ -322,7 +322,7 @@ pg_amqp_publish_opt(PG_FUNCTION_ARGS, int channel) {
 	  properties._flags |= AMQP_BASIC_CORRELATION_ID_FLAG;
 	  set_bytes_from_text(properties.correlation_id, 7);
       }
-      
+
       set_bytes_from_text(exchange_b,1);
       set_bytes_from_text(routing_key_b,2);
       set_bytes_from_text(body_b,3);
